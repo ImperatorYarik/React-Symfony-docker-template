@@ -1,0 +1,46 @@
+services:
+
+  api:
+    build: ./docker/api
+    container_name: ${PROJECT_NAME}-api
+    volumes:
+      - ${API_DIRECTORY}:/var/www/project/api
+    networks:
+      - ${PROJECT_NAME}
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: ../docker/frontend/Dockerfile
+      
+    command: npm start
+    stdin_open: true
+    tty: true
+    container_name: ${PROJECT_NAME}-frontend
+    volumes:
+      - ${FRONTEND_DIRECTORY}:/var/www/project/frontend
+    networks:
+      - ${PROJECT_NAME}
+
+  nginx:
+    build: ./docker/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8443:8443"
+    volumes:
+      - ${API_DIRECTORY}:/var/www/project/api
+      - ${FRONTEND_DIRECTORY}:/var/www/project/frontend
+      - ./docker/certs/local:/etc/nginx/certs
+    networks:
+      - ${PROJECT_NAME}
+    environment:
+      NODE_ENV: dev
+      NGINX_HOST: ${NGINX_HOST_LOCAL}
+      NGINX_PORT: ${NGINX_PORT_LOCAL}
+      NGINX_CERT_CRT: ${NGINX_CERT_CRT_LOCAL}
+      NGINX_CERT_KEY: ${NGINX_CERT_KEY_LOCAL}
+
+networks:
+  project:
+

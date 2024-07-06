@@ -1,0 +1,90 @@
+log_format postdata escape=json '$remote_addr - $http_x_forwarded_for $remote_user [$time_local] '
+                       '"$request" $status $bytes_sent '
+                       '"$http_referer" "$http_user_agent" BODY DATA - "$request_body"';
+
+server {
+    listen 80;
+    server_name ${NGINX_HOST};
+
+    access_log  /var/log/nginx/80-access.log  main;
+    access_log /var/log/nginx/80-${NGINX_HOST}.access.log postdata;
+    error_log /var/log/nginx/80-${NGINX_HOST}.error.log;
+
+    return 301 https://${NGINX_HOST};
+}
+
+server {
+    listen ${NGINX_PORT} ssl http2;
+    server_name ${NGINX_HOST};
+
+    ssl_certificate /etc/nginx/certs/${NGINX_CERT_CRT};
+    ssl_certificate_key /etc/nginx/certs/${NGINX_CERT_KEY};
+
+    root ${API_DIRECTORY}/public;
+
+    access_log  /var/log/nginx/access.log  main;
+    access_log /var/log/nginx/${NGINX_HOST}.access.log postdata;
+    error_log /var/log/nginx/${NGINX_HOST}.error.log;
+
+
+    location / {
+        proxy_pass http://frontend:3000;
+        root ${FRONTEND_DIRECTORY}/public;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        add_header Cache-Control "private, must-revalidate, max-age=3153600";
+    }
+
+    location ~ ^/(/|static/|images/|img/|javascript/|js/|css/|dist/|media/|locales/|logo192.png|robots.txt|favicon.ico|manifest.json|.+\.hot-update.js) {
+       proxy_pass http://frontend:3000;
+       root ${FRONTEND_DIRECTORY}/public;
+       access_log off;
+       add_header Cache-Control no-cache;
+       expires 1s;
+    }
+
+    location /api {
+        proxy_pass http://api:5000;
+        try_files $uri /index.php$is_args$args;
+        root ${API_DIRECTORY}/public;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass api:9000;
+        fastcgi_buffer_size 32k;
+        fastcgi_buffers 8 16k;
+        fastcgi_split_path_info ^(.+\.php)(/.*)$;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+        internal;
+    }
+
+    location ~* ^.+\.(jpg|jpeg|gif|png|ico|css|zip|tgz|gz|rar|bz2|doc|xls|exe|pdf|ppt|txt|js|tar|wav|bmp|rtf|mp4|svg|svgz})$ {
+        root ${API_DIRECTORY}/public;
+        add_header Cache-Control "private, max-age=3153600";
+    }
+
+    location ~ \.php$ {
+          return 404;
+    }
+}
+
+server {
+    listen 8443 ssl;
+    server_name ${NGINX_HOST};
+
+    ssl_certificate /etc/nginx/certs/${NGINX_CERT_CRT};
+    ssl_certificate_key /etc/nginx/certs/${NGINX_CERT_KEY};
+
+    access_log  /var/log/nginx/access.log  main;
+    access_log /var/log/nginx/${NGINX_HOST}-phpmyadmin.access.log main;
+    error_log /var/log/nginx/${NGINX_HOST}-phpmyadmin.error.log;
+
+    location / {
+        proxy_pass http://phpmyadmin:80;
+    }
+}
