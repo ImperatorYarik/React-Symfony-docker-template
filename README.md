@@ -3,7 +3,7 @@
 ./recreate.sh - script for docker compose auto building and starting containers
 ./clear_cache_symfony.sh - i think you understand 
 
-### MAY BE NEEDED TO ==npm install== IN FRONTEND DIR IF FRONTEND DOESEN'T WORK
+### MAY BE NEEDED TO $ npm install IN FRONTEND DIR IF FRONTEND DOESEN'T WORK
 
 ## PORTS
 
