@@ -22,6 +22,38 @@ services:
     networks:
       - ${PROJECT_NAME}
 
+  mysql:
+    image: mysql:8.0.20
+    container_name: ${PROJECT_NAME}-mysql
+    restart: unless-stopped
+    volumes: 
+      - mysql:/var/lib/mysql 
+    ports: 
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} 
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      - ${PROJECT_NAME}
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: ${PROJECT_NAME}-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - 8080:80
+    depends_on:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+
+    networks:
+      - ${PROJECT_NAME}
+
+
   nginx:
     build: ./docker/nginx
     ports:
@@ -44,3 +76,5 @@ services:
 networks:
   project:
 
+volumes:
+  mysql:

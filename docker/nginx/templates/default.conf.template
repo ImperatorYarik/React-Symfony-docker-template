@@ -20,7 +20,7 @@ server {
     ssl_certificate /etc/nginx/certs/${NGINX_CERT_CRT};
     ssl_certificate_key /etc/nginx/certs/${NGINX_CERT_KEY};
 
-    root ${API_DIRECTORY}/public;
+    root /var/www/project/api/public;
 
     access_log  /var/log/nginx/access.log  main;
     access_log /var/log/nginx/${NGINX_HOST}.access.log postdata;
@@ -29,7 +29,7 @@ server {
 
     location / {
         proxy_pass http://frontend:3000;
-        root ${FRONTEND_DIRECTORY}/public;
+        root /var/www/project/frontend/public;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -40,7 +40,7 @@ server {
 
     location ~ ^/(/|static/|images/|img/|javascript/|js/|css/|dist/|media/|locales/|logo192.png|robots.txt|favicon.ico|manifest.json|.+\.hot-update.js) {
        proxy_pass http://frontend:3000;
-       root ${FRONTEND_DIRECTORY}/public;
+       root /var/www/project/frontend/public;
        access_log off;
        add_header Cache-Control no-cache;
        expires 1s;
@@ -49,7 +49,7 @@ server {
     location /api {
         proxy_pass http://api:5000;
         try_files $uri /index.php$is_args$args;
-        root ${API_DIRECTORY}/public;
+        root /var/www/project/api/public;
     }
 
     location ~ \.php$ {
@@ -64,7 +64,7 @@ server {
     }
 
     location ~* ^.+\.(jpg|jpeg|gif|png|ico|css|zip|tgz|gz|rar|bz2|doc|xls|exe|pdf|ppt|txt|js|tar|wav|bmp|rtf|mp4|svg|svgz})$ {
-        root ${API_DIRECTORY}/public;
+        root /var/www/project/api/public;
         add_header Cache-Control "private, max-age=3153600";
     }
 
