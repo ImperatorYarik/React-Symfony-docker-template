@@ -1,8 +1,11 @@
 services:
 
   api:
-    build: ./docker/api
+    build:
+      context: ./${API_DIRECTORY}
+      dockerfile: ../docker/api/Dockerfile
     container_name: ${PROJECT_NAME}-api
+   
     volumes:
       - ${API_DIRECTORY}:/var/www/project/api
     networks:
@@ -19,6 +22,7 @@ services:
     container_name: ${PROJECT_NAME}-frontend
     volumes:
       - ${FRONTEND_DIRECTORY}:/var/www/project/frontend
+      - /var/www/project/frontend/node_modules
     networks:
       - ${PROJECT_NAME}
 
@@ -56,6 +60,7 @@ services:
 
   nginx:
     build: ./docker/nginx
+    container_name: ${PROJECT_NAME}-nginx
     ports:
       - "80:80"
       - "443:443"
