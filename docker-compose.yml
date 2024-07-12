@@ -5,7 +5,6 @@ services:
       context: ./${API_DIRECTORY}
       dockerfile: ../docker/api/Dockerfile
     container_name: ${PROJECT_NAME}-api
-   
     volumes:
       - ${API_DIRECTORY}:/var/www/project/api
     networks:
