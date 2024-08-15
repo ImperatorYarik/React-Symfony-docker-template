@@ -2,12 +2,15 @@
 
 namespace App\Entity;
 
+use App\EntityListener\UserEntityListener;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
+#[ORM\EntityListeners([UserEntityListener::class])]
+#[ORM\HasLifecycleCallbacks]
 class User
 {
     #[ORM\Id]
@@ -36,6 +39,14 @@ class User
     public function __construct()
     {
         $this->orders = new ArrayCollection();
+    }
+
+
+    #[ORM\PrePersist]
+    public function setNamePrePersist(): void
+    {
+        $this->password = hash('sha512', $this->getPassword());
+        $this->name = 'Vasia';
     }
 
     public function getId(): ?int
