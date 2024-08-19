@@ -5,10 +5,11 @@ namespace App\Entity;
 use App\Repository\OrderRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
-class Order
+class Order implements JsonSerializable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -17,9 +18,6 @@ class Order
 
     #[ORM\ManyToOne(inversedBy: 'orders')]
     private ?User $user = null;
-
-    #[ORM\ManyToOne(inversedBy: 'orders')]
-    private ?Ticket $ticket = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private ?string $totalPrice = null;
@@ -41,18 +39,6 @@ class Order
         return $this;
     }
 
-    public function getTicket(): ?Ticket
-    {
-        return $this->ticket;
-    }
-
-    public function setTicket(?Ticket $ticket): static
-    {
-        $this->ticket = $ticket;
-
-        return $this;
-    }
-
     public function getTotalPrice(): ?string
     {
         return $this->totalPrice;
@@ -63,5 +49,13 @@ class Order
         $this->totalPrice = $totalPrice;
 
         return $this;
+    }
+
+    public function jsonSerialize(): mixed
+    {
+        return [
+            'id' => $this->id,
+            'totalPrice' => $this->totalPrice,
+        ];
     }
 }

@@ -7,26 +7,39 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
+use Symfony\Component\Validator\Constraints\Type;
+
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\EntityListeners([UserEntityListener::class])]
 #[ORM\HasLifecycleCallbacks]
-class User
+#[UniqueEntity('email', message: 'This email is already in use!')]
+class User implements JsonSerializable
 {
+
+    const ROLE_USER = "ROLE_USER";
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
+    #[NotBlank(message: 'This field is required.') ]
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
     private ?string $surname = null;
 
+    #[Type('int')]
     #[ORM\Column(length: 255)]
     private ?string $password = null;
 
+    #[Email]
     #[ORM\Column(length: 255)]
     private ?string $email = null;
 
@@ -39,14 +52,6 @@ class User
     public function __construct()
     {
         $this->orders = new ArrayCollection();
-    }
-
-
-    #[ORM\PrePersist]
-    public function setNamePrePersist(): void
-    {
-        $this->password = hash('sha512', $this->getPassword());
-        $this->name = 'Vasia';
     }
 
     public function getId(): ?int
@@ -130,5 +135,17 @@ class User
         }
 
         return $this;
+    }
+
+    public function jsonSerialize(): mixed
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'surname' => $this->surname,
+            'password' => $this->password,
+            'email' => $this->email,
+            'orders' => $this->orders->toArray(),
+        ];
     }
 }

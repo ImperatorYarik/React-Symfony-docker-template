@@ -2,12 +2,14 @@
 
 namespace App\Controller;
 
+use App\Entity\Order;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Normalizer\NormalizableInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -35,5 +37,30 @@ class TestController
 
         return new JsonResponse($jsonData, Response::HTTP_CREATED, [], true);
     }
+
+    #[Route('/api/read-user/{id}', name: 'app_read_user', methods: ['GET'])]
+    public function getAllUsers(string $id): JsonResponse
+    {
+        $user = $this->em->getRepository(User::class)->findOneBy(['id' => $id]);
+
+
+        return new JsonResponse($user, Response::HTTP_OK);
+    }
+
+    #[Route('/api/create-order', name: 'create_order', methods: ['POST'])]
+    public function createOrder(Request $request): JsonResponse
+    {
+        $requestContent = json_decode($request->getContent(), true);
+        $user = $this->em->getRepository(User::class)->find($requestContent['order']['user_id']);
+        $requestContent['order']['user_id'] = $user;
+        $order = new Order();
+        $order->setUser($user);
+        $order->setTotalPrice($requestContent['order']['total_price']);
+        $this->em->persist($order);
+        $this->em->flush();
+
+        return new JsonResponse([], Response::HTTP_CREATED);
+    }
+
 }
 
