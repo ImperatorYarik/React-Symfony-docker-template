@@ -2,6 +2,12 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use App\Action\UserAction;
+use App\Controller\UserController;
 use App\EntityListener\UserEntityListener;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -13,8 +19,14 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints\Email;
 
-
-
+#[ApiResource(
+    operations: [
+        new Get(normalizationContext: ['groups' => ['user:get']]),
+        //new GetCollection(normalizationContext: ['groups' => ['user:get']], security: "is_granted('ROLE_USER')"),
+        new GetCollection(),
+        new Post(normalizationContext: ['groups' => ['user:get']], denormalizationContext: ['groups' => ['user:post']], controller: UserAction::class),
+    ]
+)]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
@@ -28,23 +40,44 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(["user:read"])]
+    #[Groups([
+        'user:get',
+        'user:post',
+    ])]
     #[ORM\Column(length: 255)]
     private ?string $name = null;
-    #[Groups(["user:read"])]
+    #[Groups([
+        'user:post',
+    ])]
     #[ORM\Column(length: 255)]
     private ?string $surname = null;
 
+    #[Groups([
+        'user:post',
+        'user:get',
+    ])]
     #[ORM\Column(length: 255)]
     private ?string $password = null;
 
+    #[Groups([
+        'user:get',
+        'user:post',
+    ])]
     #[Email]
-    #[Groups(["user:read"])]
     #[ORM\Column(length: 255)]
     private ?string $email = null;
 
     #[ORM\Column(type: Types::ARRAY)]
     private array $roles = [];
+
+    /**
+     * @var Collection<int, Order>
+     */
+    #[Groups([
+        'user:get'
+    ])]
+    #[ORM\OneToMany(targetEntity: Order::class, mappedBy: 'user')]
+    private Collection $orders;
 
 
     #[ORM\PrePersist]
@@ -54,7 +87,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
     public function __construct()
     {
-
+        $this->orders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -141,6 +174,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
 
+    }
+
+    /**
+     * @return Collection<int, Order>
+     */
+    public function getOrders(): Collection
+    {
+        return $this->orders;
+    }
+
+    public function addOrder(Order $order): static
+    {
+        if (!$this->orders->contains($order)) {
+            $this->orders->add($order);
+            $order->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeOrder(Order $order): static
+    {
+        if ($this->orders->removeElement($order)) {
+            // set the owning side to null (unless already changed)
+            if ($order->getUser() === $this) {
+                $order->setUser(null);
+            }
+        }
+
+        return $this;
     }
 
 }

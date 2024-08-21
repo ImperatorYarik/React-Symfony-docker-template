@@ -2,10 +2,13 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\OrderRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
+#[ApiResource]
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
 class Order
@@ -15,14 +18,17 @@ class Order
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'orders')]
-    private ?User $user = null;
-
-    #[ORM\ManyToOne(inversedBy: 'orders')]
-    private ?Ticket $ticket = null;
+    #[Groups([
+            'user:get'
+    ])]
+    #[ORM\Column(type: 'string', length: 255)]
+    private ?string $name = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private ?string $totalPrice = null;
+
+    #[ORM\ManyToOne(inversedBy: 'orders')]
+    private ?User $user = null;
 
     public function getId(): ?int
     {
@@ -41,18 +47,6 @@ class Order
         return $this;
     }
 
-    public function getTicket(): ?Ticket
-    {
-        return $this->ticket;
-    }
-
-    public function setTicket(?Ticket $ticket): static
-    {
-        $this->ticket = $ticket;
-
-        return $this;
-    }
-
     public function getTotalPrice(): ?string
     {
         return $this->totalPrice;
@@ -63,5 +57,15 @@ class Order
         $this->totalPrice = $totalPrice;
 
         return $this;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(?string $name): void
+    {
+        $this->name = $name;
     }
 }
