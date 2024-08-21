@@ -2,40 +2,59 @@
 
 namespace App\Entity;
 
+use App\EntityListener\UserEntityListener;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints\Email;
+
+
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-class User
+#[ORM\HasLifecycleCallbacks]
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+
+    const ROLE_USER= 'ROLE_USER';
+    const ROLE_ADMIN= 'ROLE_ADMIN';
+    const ROLE_MANAGER= 'ROLE_MANAGER';
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Groups(["user:read"])]
     #[ORM\Column(length: 255)]
     private ?string $name = null;
-
+    #[Groups(["user:read"])]
     #[ORM\Column(length: 255)]
     private ?string $surname = null;
 
     #[ORM\Column(length: 255)]
     private ?string $password = null;
 
+    #[Email]
+    #[Groups(["user:read"])]
     #[ORM\Column(length: 255)]
     private ?string $email = null;
 
-    /**
-     * @var Collection<int, Order>
-     */
-    #[ORM\OneToMany(targetEntity: Order::class, mappedBy: 'user')]
-    private Collection $orders;
+    #[ORM\Column(type: Types::ARRAY)]
+    private array $roles = [];
 
+
+    #[ORM\PrePersist]
+    public function changeName(): void
+    {
+        $this->name= "TEST";
+    }
     public function __construct()
     {
-        $this->orders = new ArrayCollection();
+
     }
 
     public function getId(): ?int
@@ -91,33 +110,37 @@ class User
         return $this;
     }
 
-    /**
-     * @return Collection<int, Order>
-     */
-    public function getOrders(): Collection
+    public function getRoles(): array
     {
-        return $this->orders;
+        return $this->roles;
     }
 
-    public function addOrder(Order $order): static
+    public function setRoles(array $roles): static
     {
-        if (!$this->orders->contains($order)) {
-            $this->orders->add($order);
-            $order->setUser($this);
+        $this->roles = $roles;
+
+        return $this;
+    }
+
+    public function addRole(string $role): static
+    {
+        if (!in_array($role, $this->roles)) {
+            $this->roles[] = $role;
         }
 
         return $this;
     }
 
-    public function removeOrder(Order $order): static
-    {
-        if ($this->orders->removeElement($order)) {
-            // set the owning side to null (unless already changed)
-            if ($order->getUser() === $this) {
-                $order->setUser(null);
-            }
-        }
 
-        return $this;
+    public function getUserIdentifier(): string
+    {
+        return $this->email;
     }
+
+
+    public function eraseCredentials(): void
+    {
+
+    }
+
 }
