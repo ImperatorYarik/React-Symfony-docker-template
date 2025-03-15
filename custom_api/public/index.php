@@ -1,3 +1,3 @@
 <?php
 
-echo "Hello everybody 2!";
+echo "Hello everybody with new title!";
