@@ -1,10 +1,11 @@
 <?php
 
 namespace Entity;
+require "UserInterface.php";
 
 use JsonSerializable;
 
-class User implements JsonSerializable
+class User implements JsonSerializable, UserInterface
 {
     private int $id;
     private string $name;
@@ -55,8 +56,8 @@ class User implements JsonSerializable
         return $this;
     }
 
-    public function jsonSerialize(): string
+    public function jsonSerialize(): array
     {
-        return json_encode(get_object_vars($this));
+        return get_object_vars($this);
     }
 }
