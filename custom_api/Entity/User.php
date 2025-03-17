@@ -12,6 +12,14 @@ class User implements JsonSerializable, UserInterface
     private string $email;
     private string $password;
 
+    public function __construct(int $id, string $name, string $email, string $password)
+    {
+        $this->setId($id);
+        $this->setName($name);
+        $this->setEmail($email);
+        $this->setPassword($password);
+    }
+
     public function getId(): int
     {
         return $this->id;
