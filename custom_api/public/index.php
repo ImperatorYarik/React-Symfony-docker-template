@@ -9,10 +9,9 @@ $user->setId(1)
     ->setEmail('andrew@andrew.com')
     ->setPassword('secretPassword');
 
+if(!($user instanceof JsonSerializable)){
+    echo "It is not a valid user";
+    return;
+}
 
 echo $user->jsonSerialize();
-
-
-
-
-
