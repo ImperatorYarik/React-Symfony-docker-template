@@ -11,17 +11,14 @@ services:
       - ${PROJECT_NAME}
 
   frontend:
-    build: 
+    build:
       context: ./frontend
       dockerfile: ../docker/frontend/Dockerfile
-      
-    command: npm run dev
-    stdin_open: true
-    tty: true
     container_name: ${PROJECT_NAME}-frontend
+    command: npm run dev
     volumes:
-      - ${FRONTEND_DIRECTORY}:/var/www/project/frontend
       - /var/www/project/frontend/node_modules
+      - ${FRONTEND_DIRECTORY}:/var/www/project/frontend
     networks:
       - ${PROJECT_NAME}
 
@@ -32,7 +29,7 @@ services:
     volumes: 
       - mysql:/var/lib/mysql 
     ports: 
-      - 3306:3306
+      - "3306:3306"
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} 

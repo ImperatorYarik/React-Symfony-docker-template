@@ -85,7 +85,7 @@ server {
     error_log /var/log/nginx/${NGINX_HOST}-phpmyadmin.error.log;
 
     location / {
-        proxy_pass http://pgadmin:80;
+        proxy_pass http://phpmyadmin:80;
     }
 }
 
