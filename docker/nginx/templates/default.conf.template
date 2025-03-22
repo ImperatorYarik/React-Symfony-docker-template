@@ -27,9 +27,9 @@ server {
     error_log /var/log/nginx/${NGINX_HOST}.error.log;
 
 
-    location / {
+     location / {
         proxy_pass http://frontend:3000;
-        root /var/www/project/frontend/public;
+        root /var/www/project/frontend;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -37,14 +37,14 @@ server {
         proxy_cache_bypass $http_upgrade;
         add_header Cache-Control "private, must-revalidate, max-age=3153600";
     }
-
-    location ~ ^/(/|static/|images/|img/|javascript/|js/|css/|dist/|media/|locales/|logo192.png|robots.txt|favicon.ico|manifest.json|.+\.hot-update.js) {
+   location ~ ^/(/|node_module|src|static/|images/|img/|javascript/|js/|css/|dist/|media/|locales/|logo192.png|robots.txt|favicon.ico|manifest.json|.+\.hot-update.js) {
        proxy_pass http://frontend:3000;
-       root /var/www/project/frontend/public;
+       root /var/www/project/frontend;
        access_log off;
        add_header Cache-Control no-cache;
        expires 1s;
     }
+
 
     location /api {
         proxy_pass http://api:5000;
@@ -71,8 +71,8 @@ server {
     location ~ \.php$ {
           return 404;
     }
-}
 
+}
 server {
     listen 8443 ssl;
     server_name ${NGINX_HOST};
@@ -85,6 +85,8 @@ server {
     error_log /var/log/nginx/${NGINX_HOST}-phpmyadmin.error.log;
 
     location / {
-        proxy_pass http://phpmyadmin:80;
+        proxy_pass http://pgadmin:80;
     }
 }
+
+
