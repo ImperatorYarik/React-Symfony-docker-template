@@ -5,30 +5,63 @@ namespace App\Entity;
 use App\EntityListeners\UserEntityListener;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\EntityListeners;
 use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[Entity]
 #[EntityListeners([UserEntityListener::class])]
-class User implements \JsonSerializable
+class User
 {
+
+    public const ROLE_USER = 'ROLE_USER';
+    public const ROLE_ADMIN = 'ROLE_ADMIN';
+
     #[Id]
     #[Column]
     #[GeneratedValue]
+    #[Groups([
+        'user:collection:get',
+        'user:item:get',
+    ])]
     private int $id;
 
+    #[Groups([
+        'user:collection:get',
+        'user:item:get',
+        'user:collection:post',
+    ])]
     #[Column(type: 'string', length: 255, nullable: true)]
     private string $myName;
 
+    #[Groups([
+        'user:collection:get',
+        'user:item:get',
+        'user:collection:post',
+    ])]
     #[Column(type: 'string', length: 255, unique: true)]
     private string $email;
 
+    #[Groups([
+        'user:collection:get',
+        'user:item:get',
+        'user:collection:post',
+    ])]
     #[Column(type: 'string', length: 255)]
     private string $password;
+
+    #[Groups([
+        'user:collection:get',
+        'user:item:get',
+        'user:collection:post',
+    ])]
+    #[Column(type: Types::ARRAY)]
+    private ?array $roles = [];
 
     public function getId(): int
     {
@@ -68,13 +101,16 @@ class User implements \JsonSerializable
         return $this;
     }
 
-
-    public function jsonSerialize(): array
+    public function getRoles(): array
     {
-        return [
-            'myName' => $this->myName,
-            'email' => $this->email,
-        ];
+        return $this->roles;
+    }
+
+    public function setRoles(array $roles): static
+    {
+        $this->roles = $roles;
+
+        return $this;
     }
 
 }

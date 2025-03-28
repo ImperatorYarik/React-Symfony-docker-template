@@ -14,6 +14,6 @@ class UserEntityListener
      */
     public function prePersist(User $user, LifecycleEventArgs $args): void
     {
-        $user->setPassword(password_hash($user->getPassword(), PASSWORD_DEFAULT));
+        $user->setRoles([User::ROLE_USER]);
     }
 }
