@@ -2,15 +2,19 @@
 
 namespace App\Entity;
 
+use App\EntityListeners\UserEntityListener;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\EntityListeners;
 use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[Entity]
-class User
+#[EntityListeners([UserEntityListener::class])]
+class User implements \JsonSerializable
 {
     #[Id]
     #[Column]
@@ -26,16 +30,6 @@ class User
     #[Column(type: 'string', length: 255)]
     private string $password;
 
-    /**
-     * @var Collection<int, Order>
-     */
-    #[ORM\OneToMany(targetEntity: Order::class, mappedBy: 'user')]
-    private Collection $orders;
-
-    public function __construct()
-    {
-        $this->orders = new ArrayCollection();
-    }
     public function getId(): int
     {
         return $this->id;
@@ -74,34 +68,13 @@ class User
         return $this;
     }
 
-    /**
-     * @return Collection<int, Order>
-     */
-    public function getOrders(): Collection
+
+    public function jsonSerialize(): array
     {
-        return $this->orders;
-    }
-
-    public function addOrder(Order $order): static
-    {
-        if (!$this->orders->contains($order)) {
-            $this->orders->add($order);
-            $order->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeOrder(Order $order): static
-    {
-        if ($this->orders->removeElement($order)) {
-            // set the owning side to null (unless already changed)
-            if ($order->getUser() === $this) {
-                $order->setUser(null);
-            }
-        }
-
-        return $this;
+        return [
+            'myName' => $this->myName,
+            'email' => $this->email,
+        ];
     }
 
 }
