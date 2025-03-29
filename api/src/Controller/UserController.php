@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use ApiPlatform\Validator\ValidatorInterface;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use ReflectionClass;
@@ -17,6 +18,7 @@ final class UserController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly SerializerInterface    $serializer,
+        private readonly ValidatorInterface $validator,
     )
     {}
 
@@ -50,7 +52,7 @@ final class UserController extends AbstractController
             'json',
             ['groups' => 'user:collection:post']
         );
-
+        $this->validator->validate($user);
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
