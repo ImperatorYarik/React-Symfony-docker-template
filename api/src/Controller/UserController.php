@@ -2,87 +2,50 @@
 
 namespace App\Controller;
 
-use ApiPlatform\Validator\ValidatorInterface;
 use App\Entity\User;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use ReflectionClass;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\SerializerInterface;
 
-final class UserController extends AbstractController
+class UserController extends AbstractController
 {
+
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly SerializerInterface    $serializer,
-        private readonly ValidatorInterface $validator,
+        private UserPasswordHasherInterface $passwordHasher,
+        private EntityManagerInterface $entityManager,
+        private SerializerInterface $serializer
     )
     {}
 
-    #[Route(path: '/user', name: 'get_users', methods: ['GET'])]
-    public function getUsers(): Response
+    #[Route('/user', name: 'create_user', methods: ['POST'])]
+    public function createUser(Request $request): Response
     {
-       return new Response($this->serializer
-           ->serialize($this->entityManager
-               ->getRepository(User::class)
-               ->findAll(),
-               'json', ['groups' => 'user:collection:get']),
-           Response::HTTP_OK);
-    }
-
-    #[Route(path: '/user/{id}', name: 'get_item_users', methods: ['GET'])]
-    public function getItemUsers(int $id): Response
-    {
-        return new Response($this->serializer
-            ->serialize($this->entityManager
-                ->getRepository(User::class)
-                ->findOneBy(['id' => $id]),
-                'json', ['groups' => 'user:item:get']),
-            Response::HTTP_OK);
-    }
-
-    #[Route(path: '/user', name: 'create_user', methods: ['POST'])]
-    public function createUser(Request $request): JsonResponse
-    {
-        $user = $this->serializer->deserialize($request->getContent(),
-            User::class,
-            'json',
-            ['groups' => 'user:collection:post']
-        );
-        $this->validator->validate($user);
+        $requestData = json_decode($request->getContent(), true);
+        $user = new User();
+        $user->setEmail($requestData['email']);
+        $user->setPassword($this->passwordHasher
+             ->hashPassword($user, $requestData['password']));
+        $user->setRoles([User::ROLE_USER]);
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
-        return new JsonResponse($user, Response::HTTP_CREATED);
+        return new Response('', Response::HTTP_CREATED);
     }
 
-    #[Route(path: '/user/{id}', name: 'update_user', methods: ['PUT'])]
-    public function updateUser(Request $request, int $id): JsonResponse
+
+    #[IsGranted(User::ROLE_USER)]
+    #[Route('/user', name: 'get_all_users', methods: ['GET'])]
+    public function getUsers(Request $request): Response
     {
-        $newData = json_decode($request->getContent(), true);
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $id]);
-
-        $user->setMyName($newData['name']);
-        $user->setEmail($newData['email']);
-        $user->setPassword($newData['password']);
-
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
-
-        return new JsonResponse($user, Response::HTTP_ACCEPTED);
+        $users = $this->entityManager->getRepository(User::class)->findAll();
+        $serializedUsers = $this->serializer->serialize($users, 'json', ['groups' => ['get:collection']]);
+        return new Response($serializedUsers, Response::HTTP_OK);
     }
-
-    #[Route(path: '/user/{id}', name: 'delete_user', methods: ['DELETE'])]
-    public function deleteUser(Request $request, int $id): JsonResponse
-    {
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $id]);
-        $this->entityManager->remove($user);
-        $this->entityManager->flush();
-
-        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
-    }
-
 }
