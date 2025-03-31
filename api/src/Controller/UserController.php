@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -51,7 +52,7 @@ class UserController extends AbstractController
      * @param Request $request
      * @return Response
      */
-    #[IsGranted(User::ROLE_USER)]
+    #[IsGranted(new Expression('is_granted("ROLE_ADMIN") or is_granted("ROLE_USER")'))]
     #[Route('/user', name: 'get_all_users', methods: ['GET'])]
     public function getUsers(Request $request): Response
     {
