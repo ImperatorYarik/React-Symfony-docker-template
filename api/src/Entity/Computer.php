@@ -2,11 +2,14 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
-
 use App\Repository\ComputerRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -16,10 +19,28 @@ use Symfony\Component\Serializer\Attribute\Groups;
     operations: [
         new GetCollection(
             uriTemplate: '/computers',
+            paginationItemsPerPage: 5,
+            paginationMaximumItemsPerPage: 10,
+            paginationClientItemsPerPage: true,
             normalizationContext: ['groups' => ['get:collection:computer']],
+            security: "is_granted('ROLE_USER') && object.getUser === user"
+        ),
+        new Get(
+            security: "is_granted('ROLE_USER') && object.getUser() === user"
         )
     ]
 )]
+#[ApiFilter(RangeFilter::class, properties: [
+    'id',
+])]
+#[ApiFilter(OrderFilter::class, properties: [
+    'id'
+])]
+#[ApiFilter(SearchFilter::class, properties: [
+    'id',
+    'name' => 'start'
+])]
+#[ApiFilter(BooleanFilter::class)]
 class Computer
 {
     /**
@@ -29,7 +50,8 @@ class Computer
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups([
-        'get:collection:user'
+        'get:collection:user',
+        'get:collection:computer'
     ])]
     private ?int $id = null;
 
@@ -61,6 +83,9 @@ class Computer
     ])]
     #[ORM\Column(length: 255)]
     private ?string $serialNumber = null;
+
+    #[ORM\Column]
+    private ?bool $active = null;
 
     /**
      * @return int|null
@@ -123,6 +148,18 @@ class Computer
     public function setSerialNumber(string $serialNumber): self
     {
         $this->serialNumber = $serialNumber;
+
+        return $this;
+    }
+
+    public function isActive(): ?bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): static
+    {
+        $this->active = $active;
 
         return $this;
     }

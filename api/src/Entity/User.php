@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\Action\UserCreateAction;
+use App\Action\UserUpdateAction;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -28,15 +29,22 @@ use Symfony\Component\Serializer\Attribute\Groups;
             normalizationContext: ['groups' => ['get:collection:user']],
             security: 'is_granted("ROLE_USER") && is_granted("ROLE_ADMIN")',
         ),
-        new Get(),
+        new Get(
+            security: "is_granted('ROLE_ADMIN') && object.getId() === user.getId()"
+        ),
         new Post(
             uriTemplate: '/registration',
             controller: UserCreateAction::class,
             normalizationContext: ['groups' => ['get:collection:user']],
             denormalizationContext: ['groups' => ['post:collection:user']],
+            security: 'is_granted("ROLE_USER")'
         ),
-        new Put(),
-        new Patch(),
+        new Put(
+            controller: UserUpdateAction::class,
+        ),
+        new Patch(
+            controller: UserUpdateAction::class,
+        ),
         new Delete()
     ]
 )]
@@ -86,6 +94,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     ])]
     #[ORM\OneToMany(targetEntity: Computer::class, mappedBy: 'user')]
     private Collection $computers;
+
+    #[ORM\Column]
+    private ?bool $active = null;
 
     public function __construct()
     {
@@ -191,7 +202,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if (!$this->computers->contains($computer)) {
             $this->computers->add($computer);
-            $computer->setUserId($this);
+            $computer->setUser($this);
         }
 
         return $this;
@@ -201,10 +212,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if ($this->computers->removeElement($computer)) {
             // set the owning side to null (unless already changed)
-            if ($computer->getUserId() === $this) {
-                $computer->setUserId(null);
+            if ($computer->getId() === $this) {
+                $computer->setUser(null);
             }
         }
+
+        return $this;
+    }
+
+    public function setId(?int $id): User
+    {
+        $this->id = $id;
+        return $this;
+    }
+
+    public function isActive(): ?bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): static
+    {
+        $this->active = $active;
 
         return $this;
     }

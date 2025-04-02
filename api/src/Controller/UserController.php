@@ -56,6 +56,7 @@ class UserController extends AbstractController
     #[Route('/user', name: 'get_all_users', methods: ['GET'])]
     public function getUsers(Request $request): Response
     {
+        $this->getUser();
         $users = $this->entityManager->getRepository(User::class)->findAll();
         $serializedUsers = $this->serializer->serialize($users, 'json', ['groups' => ['get:collection']]);
         return new Response($serializedUsers, Response::HTTP_OK);
