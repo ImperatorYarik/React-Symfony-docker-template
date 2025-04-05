@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -14,6 +16,7 @@ use App\Action\UserUpdateAction;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\UniqueConstraint;
@@ -37,7 +40,6 @@ use Symfony\Component\Serializer\Attribute\Groups;
             controller: UserCreateAction::class,
             normalizationContext: ['groups' => ['get:collection:user']],
             denormalizationContext: ['groups' => ['post:collection:user']],
-            security: 'is_granted("ROLE_USER")'
         ),
         new Put(
             controller: UserUpdateAction::class,
@@ -51,7 +53,13 @@ use Symfony\Component\Serializer\Attribute\Groups;
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
 
+    /**
+     *
+     */
     public const ROLE_USER = 'ROLE_USER';
+    /**
+     *
+     */
     public const ROLE_ADMIN = 'ROLE_ADMIN';
 
     /**
@@ -83,8 +91,32 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private array $roles = [];
 
+    /**
+     * @var string|null
+     */
+    #[Groups([
+        'post:collection:user',
+    ])]
     #[ORM\Column]
     private ?string $password = null;
+
+    /**
+     * @var bool|null
+     */
+    #[ORM\Column]
+    private ?bool $active = null;
+
+    /**
+     * @var string
+     */
+    #[ORM\Column]
+    private string $createdAt;
+
+    /**
+     * @var string|null
+     */
+    #[ORM\Column(type: Types::STRING)]
+    private ?string $visitedAt = null;
 
     /**
      * @var Collection<int, Computer>
@@ -95,9 +127,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Computer::class, mappedBy: 'user')]
     private Collection $computers;
 
-    #[ORM\Column]
-    private ?bool $active = null;
-
+    /**
+     *
+     */
     public function __construct()
     {
         $this->computers = new ArrayCollection();
@@ -128,16 +160,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->email = $email;
 
         return $this;
-    }
-
-    /**
-     * A visual identifier that represents this user.
-     *
-     * @see UserInterface
-     */
-    public function getUserIdentifier(): string
-    {
-        return (string) $this->email;
     }
 
     /**
@@ -182,15 +204,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @see UserInterface
-     */
-    public function eraseCredentials(): void
-    {
-        // If you store any temporary, sensitive data on the user, clear it here
-        // $this->plainPassword = null;
-    }
-
-    /**
      * @return Collection<int, Computer>
      */
     public function getComputers(): Collection
@@ -198,6 +211,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->computers;
     }
 
+    /**
+     * @param Computer $computer
+     * @return $this
+     */
     public function addComputer(Computer $computer): static
     {
         if (!$this->computers->contains($computer)) {
@@ -208,6 +225,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /**
+     * @param Computer $computer
+     * @return $this
+     */
     public function removeComputer(Computer $computer): static
     {
         if ($this->computers->removeElement($computer)) {
@@ -220,22 +241,88 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /**
+     * @param int|null $id
+     * @return $this
+     */
     public function setId(?int $id): User
     {
         $this->id = $id;
         return $this;
     }
 
+    /**
+     * @return bool|null
+     */
     public function isActive(): ?bool
     {
         return $this->active;
     }
 
+    /**
+     * @param bool $active
+     * @return $this
+     */
     public function setActive(bool $active): static
     {
         $this->active = $active;
 
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCreatedAt(): string
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * @param string $createdAt
+     * @return void
+     */
+    public function setCreatedAt(string $createdAt): void
+    {
+        $this->createdAt = $createdAt;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getVisitedAt(): ?string
+    {
+        return $this->visitedAt;
+    }
+
+    /**
+     * @param string $visitedAt
+     * @return $this
+     */
+    public function setVisitedAt(string $visitedAt): self
+    {
+        $this->visitedAt = $visitedAt;
+
+        return $this;
+    }
+
+    /**
+     * @see UserInterface
+     */
+    public function eraseCredentials(): void
+    {
+        // If you store any temporary, sensitive data on the user, clear it here
+        // $this->plainPassword = null;
+    }
+
+    /**
+     * A visual identifier that represents this user.
+     *
+     * @see UserInterface
+     */
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->email;
     }
 
 }

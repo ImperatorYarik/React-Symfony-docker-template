@@ -17,7 +17,8 @@ readonly class UserCreateAction
         $hashedPassword = $this->passwordHasher->hashPassword($data, $data->getPassword());
         $data->setPassword($hashedPassword);
         $data->setRoles([ USER::ROLE_USER ]);
-
+        $data->setActive(true);
+        $data->setCreatedAt(time());
         return $data;
     }
 }
