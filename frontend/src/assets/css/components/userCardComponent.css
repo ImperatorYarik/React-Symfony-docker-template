@@ -1,0 +1,9 @@
+.user-card{
+    width: 20%;
+    height: 25vh;
+    background-color:black;
+    color: white;
+    margin: 15px;
+    padding: 10px;
+    border-radius: 10px;
+}

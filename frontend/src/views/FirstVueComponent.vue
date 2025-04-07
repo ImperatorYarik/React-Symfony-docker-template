@@ -1,12 +1,24 @@
 <script setup>
+import UserTable from "@/components/UserTable.vue";
+import {onMounted, ref} from "vue";
+
+const users = ref([]);
+
+onMounted(async () => {
+  const response = await fetch('https://localhost/api/users?page=1', {
+    method: 'GET'
+  });
+
+  if (!response){
+    throw new Error('Request faild');
+  }
+  users.value = await response.json();
+});
 
 </script>
 
 <template>
-  <h1>
-    Hello my first component
-  </h1>
-  <img src="../assets/images/italyDSC0101420241213202.jpg" alt="italy" style="width: 300px; height: auto">
+  <UserTable :users="users"/>
 </template>
 
 <style scoped>

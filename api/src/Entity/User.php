@@ -30,7 +30,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     operations: [
         new GetCollection(
             normalizationContext: ['groups' => ['get:collection:user']],
-            security: 'is_granted("ROLE_USER") && is_granted("ROLE_ADMIN")',
+            //security: 'is_granted("ROLE_USER") && is_granted("ROLE_ADMIN")',
         ),
         new Get(
             security: "is_granted('ROLE_ADMIN') && object.getId() === user.getId()"
