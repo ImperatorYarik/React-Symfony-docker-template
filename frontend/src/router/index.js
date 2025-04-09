@@ -6,19 +6,48 @@ const router = createRouter({
     {
       path: '/',
       name: 'myFirstComponent',
-      component: () => import('../views/FirstVueComponent.vue')
+      component: () => import('../views/FirstVueComponent.vue'),
+    },
+    {
+      path: '/unauthorized',
+      name: 'myFirstComponent',
+      component: () => import('../views/FirstVueComponent.vue'),
     },
     {
       path: '/login',
-      name: 'SignIn',
-      component: () => import('../views/SignInPage.vue')
+      component: () => import('../views/SignInPage.vue'),
+      meta: { requiresAuth: false }
     },
     {
       path: '/register',
-      name: 'SignUp',
-      component: () => import('../views/SignUpPage.vue')
+      component: () => import('../views/SignUpPage.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/adminka',
+      name: 'myFirstComponent',
+      component: () => import('../views/Adminka.vue'),
+      meta: { requiresAuth: true, roles: ['ROLE_USER'] }
     }
   ]
 })
+
+
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('access_token');
+  const role = localStorage.getItem('role');
+
+  if (to.meta.requiresAuth){
+    if (!token || !role){
+      return next('/login');
+    }
+
+    if (to.meta.roles && !to.meta.roles.includes(role)){
+      return next('/unauthorized');
+    }
+  }
+
+  next();
+});
 
 export default router

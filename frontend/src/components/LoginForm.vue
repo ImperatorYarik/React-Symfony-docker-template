@@ -1,5 +1,6 @@
 <script setup>
 import axios from "axios";
+import {jwtDecode} from "jwt-decode";
 import {reactive} from "vue";
 
 const form = reactive({
@@ -10,7 +11,9 @@ const form = reactive({
 const login = async () => {
   try {
     const response = await axios.post('https://localhost/api/login_check', form);
-    console.log(response);
+    let tokenData = jwtDecode(response.data.token);
+    localStorage.setItem('access_token', response.data.token);
+    localStorage.setItem('role', [tokenData.roles]);
     alert('Авторизовано');
   }catch (error){
     console.log('Login failed with an error', error)
