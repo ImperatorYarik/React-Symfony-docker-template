@@ -1,0 +1,12 @@
+.register-from{
+
+}
+
+.register-from > * {
+    display: flex;
+    flex-direction: column;
+}
+
+.register-from > div > * {
+    max-width: 350px;
+}
