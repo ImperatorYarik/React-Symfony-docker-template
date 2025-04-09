@@ -2,7 +2,9 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
@@ -10,319 +12,308 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
-use App\Action\UserCreateAction;
-use App\Action\UserUpdateAction;
+use App\Action\CreateUserAction;
+use App\Action\GetUsersAction;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\Entity;
-use Doctrine\ORM\Mapping\UniqueConstraint;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Regex;
+use Symfony\Component\Validator\Constraints\Type;
 
-#[Entity(repositoryClass: UserRepository::class)]
-#[UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[ApiResource(
     operations: [
-        new GetCollection(
-            normalizationContext: ['groups' => ['get:collection:user']],
-            //security: 'is_granted("ROLE_USER") && is_granted("ROLE_ADMIN")',
-        ),
-        new Get(
-            security: "is_granted('ROLE_ADMIN') && object.getId() === user.getId()"
-        ),
         new Post(
             uriTemplate: '/registration',
-            controller: UserCreateAction::class,
-            normalizationContext: ['groups' => ['get:collection:user']],
+            controller: CreateUserAction::class,
+            normalizationContext: ['groups' => ['get:item:user']],
             denormalizationContext: ['groups' => ['post:collection:user']],
+            security: "is_granted('PUBLIC_ACCESS')"
         ),
-        new Put(
-            controller: UserUpdateAction::class,
+        new Get(
+            normalizationContext: ['groups' => ['get:item:user']],
+            security: "is_granted('" .User::ROLE_ADMIN. "') or is_granted('" .User::ROLE_USER. "') and object == user",
         ),
-        new Patch(
-            controller: UserUpdateAction::class,
-        ),
-        new Delete()
-    ]
+    ],
 )]
+#[ORM\Entity(repositoryClass: UserRepository::class)]
+#[UniqueEntity(fields: ["email"], message: "Ця електронна пошта вже використовується")]
+#[UniqueEntity(fields: ["phoneNumber"], message: "Цей номер телефону вже використовується")]
+#[ApiFilter(SearchFilter::class, properties: [
+    'id'          => "exact",
+    "name"        => "start",
+    "surname"     => "start",
+    "lastname"    => "start",
+    "email"       => "start",
+    'phoneNumber' => 'exact',
+    'address'     => "start",
+])]
+#[ApiFilter(OrderFilter::class, properties: [
+    'id',
+    'name',
+    "surname",
+    "lastname",
+    'email',
+    'phoneNumber',
+    'address'
+], arguments: ['orderParameterName' => 'order'])]
+#[ApiFilter(BooleanFilter::class, properties: [
+    "isActive",
+])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
 
-    /**
-     *
-     */
-    public const ROLE_USER = 'ROLE_USER';
-    /**
-     *
-     */
-    public const ROLE_ADMIN = 'ROLE_ADMIN';
+    const ROLE_USER = 'ROLE_USER';
+    const ROLE_ADMIN = 'ROLE_ADMIN';
+    const ROLE_MANAGER = 'ROLE_MANAGER';
 
     /**
      * @var int|null
      */
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[Id]
+    #[GeneratedValue]
+    #[Column]
+    #[Groups([
+        'get:item:user',
+        'get:collection:user',
+        'deserialize:token:user',
+        'get:item:user:jwt',
+    ])]
     private ?int $id = null;
 
     /**
      * @var string|null
      */
     #[Groups([
+        'get:item:user',
         'get:collection:user',
+        'get:item:user:jwt',
+        'deserialize:token:user',
         'post:collection:user',
-        'get:collection:computer'
+        'patch:item:user'
     ])]
-    #[ORM\Column(length: 180)]
-    private ?string $email = null;
-
-    /**
-     * @var list<string> The user roles
-     */
-    #[Groups([
-        'get:collection:user',
-        'get:collection:computer'
-    ])]
-    #[ORM\Column]
-    private array $roles = [];
+    #[NotBlank(message: "Ім'я не може бути порожнім")]
+    #[Type("string")]
+    #[Length(min: 1, max: 255, minMessage: "Ім'я повинно містити щонайменше 1 символ", maxMessage: "Ім'я не може перевищувати 255 символів")]
+    #[Column(length: 255)]
+    private ?string $name = null;
 
     /**
      * @var string|null
      */
     #[Groups([
+        'get:item:user',
+        'get:collection:user',
+        'get:item:user:jwt',
+        'deserialize:token:user',
         'post:collection:user',
+        'patch:item:user',
     ])]
-    #[ORM\Column]
+    #[NotBlank(message: "Прізвище не може бути порожнім")]
+    #[Type("string")]
+    #[Length(min: 1, max: 255, minMessage: "Прізвище повинно містити щонайменше 1 символ", maxMessage: "Прізвище не може перевищувати 255 символів")]
+    #[Column(length: 255)]
+    private ?string $surname = null;
+
+    /**
+     * @var string|null
+     */
+    #[Groups([
+        'get:item:user',
+        'get:collection:user',
+        'get:item:user:jwt',
+        'deserialize:token:user',
+        'post:collection:user',
+        'patch:item:user'
+    ])]
+    #[Type("string")]
+    #[Length(min: 1, max: 255, minMessage: "По батькові повинно містити щонайменше 1 символ", maxMessage: "По батькові не може перевищувати 255 символів")]
+    #[NotBlank(message: "По батькові не може бути порожнім", allowNull: true)]
+    #[Column(length: 255, nullable: true)]
+    private ?string $lastName = null;
+
+    /**
+     * @var string|null
+     */
+    #[Groups([
+        'get:item:user',
+        'get:collection:user',
+        'get:item:user:jwt',
+        'deserialize:token:user',
+        'post:collection:user',
+        'patch:item:user'
+    ])]
+    #[NotBlank(message: "Електронна пошта не може бути порожньою")]
+    #[Email(message: "Електронна пошта повинна бути валідною")]
+    #[Column(length: 255)]
+    private ?string $email = null;
+
+    /**
+     * @var string|null
+     */
+    #[Groups([
+        'get:item:user',
+        'get:collection:user',
+        'post:collection:user',
+        'deserialize:token:user',
+        'patch:item:user'
+    ])]
+    #[NotBlank(message: "Номер телефону не може бути порожнім")]
+    #[Type("string")]
+    #[Regex(pattern: '/^(?:\d{10}|\+\d{12})$/', message: "Некорекний номер")]
+    #[Column(length: 255)]
+    private ?string $phoneNumber = null;
+
+    /**
+     * @var string|null
+     */
+    #[Groups([
+        'post:collection:user'
+    ])]
+    #[Length(min: 4, max: 255, minMessage: "Пароль повинен містити щонайменше 4 символи", maxMessage: "Пароль не може перевищувати 255 символів")]
+    #[Column(length: 255)]
     private ?string $password = null;
+
+    /**
+     * @var array
+     */
+    #[Groups([
+        'get:item:user',
+        'get:item:user:jwt',
+        'deserialize:token:user',
+        'get:collection:user'
+    ])]
+    #[Column]
+    private array $roles = [];
 
     /**
      * @var bool|null
      */
-    #[ORM\Column]
-    private ?bool $active = null;
-
-    /**
-     * @var string
-     */
-    #[ORM\Column]
-    private string $createdAt;
-
-    /**
-     * @var string|null
-     */
-    #[ORM\Column(type: Types::STRING)]
-    private ?string $visitedAt = null;
-
-    /**
-     * @var Collection<int, Computer>
-     */
     #[Groups([
+        'get:item:user',
         'get:collection:user',
+        'get:item:user:jwt',
+        'deserialize:token:user',
+        'patch:item:user'
     ])]
-    #[ORM\OneToMany(targetEntity: Computer::class, mappedBy: 'user')]
-    private Collection $computers;
+    #[Type("boolean")]
+    #[Choice(choices: [true, false, null], message: "Статус активності повинен бути true, false або null")]
+    #[Column(nullable: true)]
+    private ?bool $isActive = null;
 
-    /**
-     *
-     */
-    public function __construct()
-    {
-        $this->computers = new ArrayCollection();
-    }
-
-    /**
-     * @return int|null
-     */
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    /**
-     * @return string|null
-     */
+    public function setId(?int $id): void
+    {
+        $this->id = $id;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(?string $name): void
+    {
+        $this->name = $name;
+    }
+
+    public function getSurname(): ?string
+    {
+        return $this->surname;
+    }
+
+    public function setSurname(?string $surname): void
+    {
+        $this->surname = $surname;
+    }
+
+    public function getLastName(): ?string
+    {
+        return $this->lastName;
+    }
+
+    public function setLastName(?string $lastName): void
+    {
+        $this->lastName = $lastName;
+    }
+
     public function getEmail(): ?string
     {
         return $this->email;
     }
 
-    /**
-     * @param string $email
-     * @return $this
-     */
-    public function setEmail(string $email): self
+    public function setEmail(?string $email): void
     {
         $this->email = $email;
-
-        return $this;
     }
 
-    /**
-     * @see UserInterface
-     *
-     * @return list<string>
-     */
-    public function getRoles(): array
+    public function getPhoneNumber(): ?string
     {
-        $roles = $this->roles;
-
-        return array_unique($roles);
+        return $this->phoneNumber;
     }
 
-    /**
-     * @param list<string> $roles
-     */
-    public function setRoles(array $roles): self
+    public function setPhoneNumber(?string $phoneNumber): void
     {
-        $this->roles = $roles;
-
-        return $this;
+        $this->phoneNumber = $phoneNumber;
     }
 
-    /**
-     * @see PasswordAuthenticatedUserInterface
-     */
-    public function getPassword(): string
+    public function getPassword(): ?string
     {
         return $this->password;
     }
 
-    /**
-     * @param string $password
-     * @return $this
-     */
-    public function setPassword(string $password): self
+    public function setPassword(?string $password): void
     {
         $this->password = $password;
+    }
 
-        return $this;
+    public function getRoles(): array
+    {
+        return $this->roles;
+    }
+
+    public function setRoles(array $roles): void
+    {
+        $this->roles = $roles;
+    }
+
+    public function getIsActive(): ?bool
+    {
+        return $this->isActive;
+    }
+
+    public function setIsActive(?bool $isActive): void
+    {
+        $this->isActive = $isActive;
     }
 
     /**
-     * @return Collection<int, Computer>
+     * @return void
      */
-    public function getComputers(): Collection
-    {
-        return $this->computers;
-    }
-
-    /**
-     * @param Computer $computer
-     * @return $this
-     */
-    public function addComputer(Computer $computer): static
-    {
-        if (!$this->computers->contains($computer)) {
-            $this->computers->add($computer);
-            $computer->setUser($this);
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param Computer $computer
-     * @return $this
-     */
-    public function removeComputer(Computer $computer): static
-    {
-        if ($this->computers->removeElement($computer)) {
-            // set the owning side to null (unless already changed)
-            if ($computer->getId() === $this) {
-                $computer->setUser(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param int|null $id
-     * @return $this
-     */
-    public function setId(?int $id): User
-    {
-        $this->id = $id;
-        return $this;
-    }
-
-    /**
-     * @return bool|null
-     */
-    public function isActive(): ?bool
-    {
-        return $this->active;
-    }
-
-    /**
-     * @param bool $active
-     * @return $this
-     */
-    public function setActive(bool $active): static
-    {
-        $this->active = $active;
-
-        return $this;
-    }
+    public function eraseCredentials(): void
+    {}
 
     /**
      * @return string
      */
-    public function getCreatedAt(): string
-    {
-        return $this->createdAt;
-    }
-
-    /**
-     * @param string $createdAt
-     * @return void
-     */
-    public function setCreatedAt(string $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getVisitedAt(): ?string
-    {
-        return $this->visitedAt;
-    }
-
-    /**
-     * @param string $visitedAt
-     * @return $this
-     */
-    public function setVisitedAt(string $visitedAt): self
-    {
-        $this->visitedAt = $visitedAt;
-
-        return $this;
-    }
-
-    /**
-     * @see UserInterface
-     */
-    public function eraseCredentials(): void
-    {
-        // If you store any temporary, sensitive data on the user, clear it here
-        // $this->plainPassword = null;
-    }
-
-    /**
-     * A visual identifier that represents this user.
-     *
-     * @see UserInterface
-     */
     public function getUserIdentifier(): string
     {
-        return (string) $this->email;
+        return $this->email ?? $this->phoneNumber;
     }
-
 }
