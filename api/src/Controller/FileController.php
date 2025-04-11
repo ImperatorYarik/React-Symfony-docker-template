@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Service\FileUploader;
 use Aws\S3\S3Client;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,7 +15,6 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class FileController extends AbstractController
 {
-    const BUCKET_NAME = 'ztusymfonycourse';
     public function __construct(
         private readonly FileUploader $fileUploader,
         private readonly EntityManagerInterface $entityManager
@@ -26,7 +26,7 @@ class FileController extends AbstractController
     public function uploadUserAvatar(Request $request): JsonResponse
     {
         $file = $request->files->get('image');
-        $response = $this->fileUploader->uploadFile($file, $this::BUCKET_NAME);
+        $response = $this->fileUploader->uploadFile($file, User::BUCKET_NAME);
 
         $user = $this->getUser();
         $user->setAvatar($response['FileName']);

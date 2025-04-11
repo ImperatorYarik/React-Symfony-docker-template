@@ -7,17 +7,11 @@ use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Action\CreateUserAction;
-use App\Action\GetUsersAction;
+use App\Action\GetUserAction;
 use App\Repository\UserRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\GeneratedValue;
@@ -43,6 +37,7 @@ use Symfony\Component\Validator\Constraints\Type;
             security: "is_granted('PUBLIC_ACCESS')"
         ),
         new Get(
+            controller: GetUserAction::class,
             normalizationContext: ['groups' => ['get:item:user']],
             security: "is_granted('" .User::ROLE_ADMIN. "') or is_granted('" .User::ROLE_USER. "') and object == user",
         ),
@@ -74,6 +69,7 @@ use Symfony\Component\Validator\Constraints\Type;
 ])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    const BUCKET_NAME = 'ztusymfonycourse';
 
     const ROLE_USER = 'ROLE_USER';
     const ROLE_ADMIN = 'ROLE_ADMIN';
@@ -213,6 +209,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Column(nullable: true)]
     private ?bool $isActive = null;
 
+    #[Groups([
+        'get:item:user',
+        'get:collection:user',
+    ])]
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $avatar = null;
 

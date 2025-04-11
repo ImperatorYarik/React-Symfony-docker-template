@@ -4,12 +4,21 @@ namespace App\Service;
 
 use Aws\S3\S3Client;
 
-class FileUploader
+readonly class FileUploader
 {
+
+    /**
+     * @param S3Client $s3Client
+     */
     public function __construct(private S3Client $s3Client)
     {}
 
-    public function uploadFile($file, string $bucket)
+    /**
+     * @param $file
+     * @param string $bucket
+     * @return array
+     */
+    public function uploadFile($file, string $bucket): array
     {
         if ($file && $file->isValid() !== null && $file->getSize() > 0) {
             $fileName = $file->getClientOriginalName();
@@ -43,4 +52,5 @@ class FileUploader
             'IsTrue' => false,
         ];
     }
+
 }
