@@ -23,7 +23,7 @@ readonly class JWTAuthenticatedListener
         $payload = $event->getPayload();
 
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $payload['username']]);
-        $user->setVisitedAt(time());
+        //$user->setVisitedAt(time());
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
