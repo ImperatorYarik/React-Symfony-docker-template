@@ -7,10 +7,13 @@ use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Action\CreateUserAction;
+use App\Action\DeleteUserAction;
 use App\Action\GetCollectionUserAction;
 use App\Action\GetUserAction;
 use App\Repository\UserRepository;
@@ -50,6 +53,21 @@ use Symfony\Component\Validator\Constraints\Type;
             paginationMaximumItemsPerPage: 100,
             paginationClientItemsPerPage: true,
             normalizationContext: ['groups' => ['get:collection:user']],
+            security: "is_granted('" . User::ROLE_ADMIN . "')",
+        ),
+        new Patch(
+            uriTemplate: '/update-user/{id}',
+            normalizationContext: ['groups' => ['get:item:user']],
+            denormalizationContext: ['groups' => ['patch:collection:user']],
+            security: "(is_granted('" . User::ROLE_USER . "') and object == user) or is_granted('" . User::ROLE_ADMIN . "')",
+        ),
+        new Patch(
+            uriTemplate: '/delete-user/{id}',
+            controller: DeleteUserAction::class,
+            denormalizationContext: ['groups' => ['patch:delete:user']],
+            security: "(is_granted('" . User::ROLE_USER . "') and object == user) or is_granted('" . User::ROLE_ADMIN . "')",
+        ),
+        new Delete(
             security: "is_granted('" . User::ROLE_ADMIN . "')",
         ),
     ],
@@ -110,7 +128,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         'get:item:user:jwt',
         'deserialize:token:user',
         'post:collection:user',
-        'patch:item:user'
+        'patch:collection:user'
     ])]
     #[NotBlank(message: "Ім'я не може бути порожнім")]
     #[Type("string")]
@@ -127,7 +145,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         'get:item:user:jwt',
         'deserialize:token:user',
         'post:collection:user',
-        'patch:item:user',
+        'patch:collection:user'
     ])]
     #[NotBlank(message: "Прізвище не може бути порожнім")]
     #[Type("string")]
@@ -144,7 +162,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         'get:item:user:jwt',
         'deserialize:token:user',
         'post:collection:user',
-        'patch:item:user'
+        'patch:collection:user'
     ])]
     #[Type("string")]
     #[Length(min: 1, max: 255, minMessage: "По батькові повинно містити щонайменше 1 символ", maxMessage: "По батькові не може перевищувати 255 символів")]
@@ -161,7 +179,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         'get:item:user:jwt',
         'deserialize:token:user',
         'post:collection:user',
-        'patch:item:user'
     ])]
     #[NotBlank(message: "Електронна пошта не може бути порожньою")]
     #[Email(message: "Електронна пошта не відповідає вимогам")]
@@ -176,7 +193,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         'get:collection:user',
         'post:collection:user',
         'deserialize:token:user',
-        'patch:item:user'
     ])]
     #[NotBlank(message: "Номер телефону не може бути порожнім")]
     #[Type("string")]
@@ -214,7 +230,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         'get:collection:user',
         'get:item:user:jwt',
         'deserialize:token:user',
-        'patch:item:user'
     ])]
     #[Type("boolean")]
     #[Choice(choices: [true, false, null], message: "Статус активності повинен бути true, false або null")]

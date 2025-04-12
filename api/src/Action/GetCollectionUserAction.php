@@ -13,8 +13,7 @@ readonly class GetCollectionUserAction
      * @param FileGetter $fileGetter
      */
     public function __construct(private FileGetter $fileGetter)
-    {
-    }
+    {}
 
     /**
      * @param Paginator $data
@@ -24,6 +23,9 @@ readonly class GetCollectionUserAction
     {
         /** @var User $user */
         foreach ($data as $user) {
+            if (!$user->getIsActive()) {
+                continue;
+            }
             $imageUrl = $this->fileGetter->getPresignedUrl($user->getAvatar(), User::BUCKET_NAME);
             $user->setAvatar($imageUrl);
         }
