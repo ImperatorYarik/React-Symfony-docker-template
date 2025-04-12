@@ -1,0 +1,9 @@
+.header-container{
+    margin-left: 40px;
+    margin-right: 40px;
+    max-height: 20vh;
+}
+.nav-bar{
+    display: flex;
+    justify-content: space-between;
+}

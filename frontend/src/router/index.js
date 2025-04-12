@@ -5,8 +5,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'myFirstComponent',
-      component: () => import('../views/FirstVueComponent.vue'),
+      name: 'HomePage',
+      component: () => import('../views/HomePage.vue'),
     },
     {
       path: '/unauthorized',
@@ -24,7 +24,7 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
-      path: '/adminka',
+      path: '/profile',
       name: 'myFirstComponent',
       component: () => import('../views/Adminka.vue'),
       meta: { requiresAuth: true, roles: ['ROLE_USER'] }

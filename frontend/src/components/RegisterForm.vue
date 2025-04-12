@@ -1,6 +1,6 @@
 <script setup>
 import axios from "axios";
-import {reactive} from "vue";
+import {reactive, ref} from "vue";
 
 const form = reactive({
   name: "",
@@ -11,16 +11,28 @@ const form = reactive({
   password: "",
 });
 
+const errors = ref('');
+
 const register = async () => {
-  try {
-    const response = await axios.post('https://localhost/api/registration', form);
-    console.log(response);
-    alert('User created');
-  }catch (error){
-    console.log('Registration failed with an error', error)
-    alert('Registration failed')
-  }
+    const response = await axios.post('https://localhost/api/registration', form).then(
+        response => {
+          console.log('Form submitted successfully', response.data);
+        }
+    ).catch(
+        error => {
+          if (error.response){
+            const violations = error.response.data.detail;
+            displayViolations(violations);
+          }else{
+            console.log('Unxpected error: ', error)
+          }
+        }
+    )
 };
+
+function displayViolations(violations){
+  errors.value = violations;
+}
 
 </script>
 
@@ -53,6 +65,8 @@ const register = async () => {
         <input type="text" name="lastname" id="lastname" v-model="form.lastName"/>
       </div>
       <button type="submit">Зареєструватися</button>
+
+      <span id="error-list" class="error-list">{{errors}}</span>
     </form>
   </div>
 </template>

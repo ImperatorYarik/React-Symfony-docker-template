@@ -10,3 +10,11 @@
 .register-from > div > * {
     max-width: 350px;
 }
+
+.register-from > div > button {
+    max-width: 350px;
+}
+
+.error-list{
+    max-width: 350px;
+}
