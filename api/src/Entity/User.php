@@ -216,6 +216,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $avatar = null;
 
+    #[Groups([
+        'get:item:user',
+        'get:collection:user',
+    ])]
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $visitedAt = null;
+
+
     public function getId(): ?int
     {
         return $this->id;
@@ -330,5 +338,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->avatar = $avatar;
 
         return $this;
+    }
+
+    public function getVisitedAt(): ?string
+    {
+        return $this->visitedAt;
+    }
+
+    public function setVisitedAt(?string $visitedAt): void
+    {
+        $this->visitedAt = $visitedAt;
     }
 }

@@ -28,10 +28,13 @@ class FileController extends AbstractController
         $file = $request->files->get('image');
         $response = $this->fileUploader->uploadFile($file, User::BUCKET_NAME);
 
-        $user = $this->getUser();
-        $user->setAvatar($response['FileName']);
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
+        if($response['IsTrue']){
+            $user = $this->getUser();
+            $user->setAvatar($response['FileName']);
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+        }
+
 
         return new JsonResponse($response, Response::HTTP_CREATED);
     }
