@@ -27,7 +27,7 @@ const router = createRouter({
       path: '/profile',
       name: 'myFirstComponent',
       component: () => import('../views/Adminka.vue'),
-      meta: { requiresAuth: true, roles: ['ROLE_USER'] }
+      meta: { requiresAuth: true, roles: ['ROLE_USER', 'ROLE_ADMIN'] }
     }
   ]
 })
