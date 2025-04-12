@@ -8,8 +8,10 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use App\Action\CreateUserAction;
+use App\Action\GetCollectionUserAction;
 use App\Action\GetUserAction;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
@@ -39,7 +41,16 @@ use Symfony\Component\Validator\Constraints\Type;
         new Get(
             controller: GetUserAction::class,
             normalizationContext: ['groups' => ['get:item:user']],
-            security: "is_granted('" .User::ROLE_ADMIN. "') or is_granted('" .User::ROLE_USER. "') and object == user",
+            security: "(is_granted('" . User::ROLE_USER . "') and object == user) or is_granted('" . User::ROLE_ADMIN . "')",
+        ),
+        new GetCollection(
+            controller: GetCollectionUserAction::class,
+            paginationEnabled: true,
+            paginationItemsPerPage: 10,
+            paginationMaximumItemsPerPage: 100,
+            paginationClientItemsPerPage: true,
+            normalizationContext: ['groups' => ['get:collection:user']],
+            security: "is_granted('" . User::ROLE_ADMIN . "')",
         ),
     ],
 )]
@@ -74,6 +85,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     const ROLE_USER = 'ROLE_USER';
     const ROLE_ADMIN = 'ROLE_ADMIN';
     const ROLE_MANAGER = 'ROLE_MANAGER';
+    const DEFAULT_IMAGE_NAME = 'default.jpg';
 
     /**
      * @var int|null
@@ -152,7 +164,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         'patch:item:user'
     ])]
     #[NotBlank(message: "Електронна пошта не може бути порожньою")]
-    #[Email(message: "Електронна пошта повинна бути валідною")]
+    #[Email(message: "Електронна пошта не відповідає вимогам")]
     #[Column(length: 255)]
     private ?string $email = null;
 
@@ -213,8 +225,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         'get:item:user',
         'get:collection:user',
     ])]
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $avatar = null;
+    #[ORM\Column(length: 255, nullable: false)]
+    private ?string $avatar = USER::DEFAULT_IMAGE_NAME;
 
     #[Groups([
         'get:item:user',

@@ -8,10 +8,17 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 readonly class UserUpdateAction
 {
 
+    /**
+     * @param UserPasswordHasherInterface $passwordHasher
+     */
     public function __construct(
         private UserPasswordHasherInterface $passwordHasher,
     ){}
 
+    /**
+     * @param User $data
+     * @return User
+     */
     public function __invoke(User $data): User
     {
         $hashedPassword = $this->passwordHasher->hashPassword($data, $data->getPassword());
@@ -20,4 +27,5 @@ readonly class UserUpdateAction
 
         return $data;
     }
+
 }

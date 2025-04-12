@@ -7,9 +7,17 @@ use App\Service\FileGetter;
 
 readonly class GetUserAction
 {
+
+    /**
+     * @param FileGetter $fileGetter
+     */
     public function __construct(private FileGetter $fileGetter)
     {}
 
+    /**
+     * @param User $user
+     * @return User
+     */
     public function __invoke(User $user): User
     {
         $userAvatarName = $user->getAvatar();

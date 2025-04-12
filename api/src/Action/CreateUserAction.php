@@ -8,6 +8,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 readonly class CreateUserAction
 {
+
     /**
      * @param UserPasswordHasherInterface $passwordHasher
      * @param ValidatorInterface $validator
@@ -32,4 +33,5 @@ readonly class CreateUserAction
 
         return $data;
     }
+
 }
